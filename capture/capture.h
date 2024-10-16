@@ -40,5 +40,9 @@
  * OSes that have "helpfully" moved pcap.h to <pcap/pcap.h> without
  * leaving behind a <pcap.h> file.
  */
+
+#ifndef CAPTURE_H
+#define CAPTURE_H
 #include <pcap/pcap.h>
 #include <pcap.h> 
+#endif // !CAPTURE_H
