@@ -9,6 +9,13 @@ import (
 	"github.com/google/gopacket/pcap"
 )
 
+type packet struct {
+	src_addr string
+	src_port string
+	dst_addr string
+	dst_port string
+}
+
 func main() {
 	// Open a live capture handle on the "tailscale0" interface
 	handle, err := pcap.OpenLive("tailscale0", 65536, true, pcap.BlockForever)
@@ -25,19 +32,33 @@ func main() {
 }
 
 func handlePacket(packetData []byte) {
+	p := packet{}
 	packet := gopacket.NewPacket(packetData, layers.LayerTypeIPv4, gopacket.Default)
 
-	// Get the TCP layer from this packet (if it exists)
-	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {
-		fmt.Println("This is a TCP packet!")
-
-		// Get actual TCP data from this layer and print source/destination ports
-		tcp, _ := tcpLayer.(*layers.TCP)
-		fmt.Printf("From src port %d to dst port %d\n", tcp.SrcPort, tcp.DstPort)
+	if ipLayer := packet.Layer(layers.LayerTypeIPv4); ipLayer != nil {
+		ip, _ := ipLayer.(*layers.IPv4)
+		p.src_addr = ip.SrcIP.String()
+		p.dst_addr = ip.DstIP.String()
+	} else if ipLayer := packet.Layer(layers.LayerTypeIPv6); ipLayer != nil {
+		ip, _ := ipLayer.(*layers.IPv6)
+		p.src_addr = ip.SrcIP.String()
+		p.dst_addr = ip.DstIP.String()
 	}
 
-	// Iterate over all layers and print out each layer type
+	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {
+		// Get actual TCP data from this layer and print source/destination ports
+		tcp, _ := tcpLayer.(*layers.TCP)
+		p.src_port = tcp.SrcPort.String()
+		p.dst_port = tcp.DstPort.String()
+	}
+
+	var layerType gopacket.LayerType
 	for _, layer := range packet.Layers() {
-		fmt.Println("PACKET LAYER:", layer.LayerType())
+		layerType = layer.LayerType()
+	}
+	switch layerType {
+	case layers.LayerTypeDNS:
+	default:
+		fmt.Printf("%s src: %s:%s dst:%s:%s\n", layerType, p.src_addr, p.src_port, p.dst_addr, p.dst_port)
 	}
 }
