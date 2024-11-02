@@ -1,24 +1,18 @@
 <script>
     import "../app.css";
+    let status = $state("idle")
+    let packets = $state([])
 
-    // Sample data for the packet table
-    let packets = [
-        {
-            timestamp: "2024-11-01 12:34:56",
-            sourceIP: "192.168.1.1",
-            destinationIP: "192.168.1.2",
-            protocol: "TCP",
-            size: "1500 bytes",
-        },
-        {
-            timestamp: "2024-11-01 12:35:01",
-            sourceIP: "192.168.1.3",
-            destinationIP: "192.168.1.4",
-            protocol: "UDP",
-            size: "850 bytes",
-        },
-        // Add more packets as needed
-    ];
+    const socket = new WebSocket("ws://localhost:8999");
+    socket.addEventListener("open", () => {
+       status = "open";
+    });
+    socket.addEventListener("error", (event) => {
+        status = event;
+    })
+    socket.addEventListener("message", (event) => {
+        packets.push(event.data);
+    })
 </script>
 
 <div class="table-container">
@@ -47,28 +41,26 @@
 </div>
 
 <style>
-table {
-    border-collapse: collapse;
-}
+    table {
+        border-collapse: collapse;
+    }
 
-.table-container {
-    background-color: var(--rp-surface);
-    border-radius: 10px;
-    padding: 2em;
-}
-table {
-    width: 100%;
-}
+    .table-container {
+        background-color: var(--rp-surface);
+        border-radius: 10px;
+        padding: 2em;
+    }
+    table {
+        width: 100%;
+    }
 
-thead tr {
-    color: #ffffff;
-    text-align: left;
-}
-th, td {
-    padding: 12px 15px;
-    color: var(--rp-text);
-}
-
-
-
+    thead tr {
+        color: #ffffff;
+        text-align: left;
+    }
+    th,
+    td {
+        padding: 12px 15px;
+        color: var(--rp-text);
+    }
 </style>
