@@ -1,4 +1,4 @@
-package main
+package capture
 
 import (
 	"fmt"
@@ -7,18 +7,19 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+	"github.com/j4n-r/traffic/pkg/websocket"
 )
 
-type packet struct {
+type Packet struct {
 	src_addr string
 	src_port string
 	dst_addr string
 	dst_port string
 }
 
-func main() {
+func StartCapture(device string, s *websocket.Server) {
 	// Open a live capture handle on the "tailscale0" interface
-	handle, err := pcap.OpenLive("tailscale0", 65536, true, pcap.BlockForever)
+	handle, err := pcap.OpenLive(device, 65536, true, pcap.BlockForever)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,12 +28,12 @@ func main() {
 	// Set up a packet source to read packets from the handle
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
 	for packet := range packetSource.Packets() {
-		handlePacket(packet.Data()) // Process each packet as a byte slice
+		handlePacket(packet.Data(), s) // Process each packet as a byte slice
 	}
 }
 
-func handlePacket(packetData []byte) {
-	p := packet{}
+func handlePacket(packetData []byte, s *websocket.Server) {
+	p := Packet{}
 	packet := gopacket.NewPacket(packetData, layers.LayerTypeIPv4, gopacket.Default)
 
 	if ipLayer := packet.Layer(layers.LayerTypeIPv4); ipLayer != nil {
@@ -60,5 +61,6 @@ func handlePacket(packetData []byte) {
 	case layers.LayerTypeDNS:
 	default:
 		fmt.Printf("%s src: %s:%s dst:%s:%s\n", layerType, p.src_addr, p.src_port, p.dst_addr, p.dst_port)
+		s.C.WriteMessage(s.MessageType, []byte(fmt.Sprintf("%s src: %s:%s dst:%s:%s\n", layerType, p.src_addr, p.src_port, p.dst_addr, p.dst_port)))
 	}
 }
