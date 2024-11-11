@@ -26,7 +26,7 @@ func (s *Server) ServeWS(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("Connected to: ", ws.RemoteAddr())
 	s.C = ws
-    s.MessageType = websocket.TextMessage
+    s.MessageType = websocket.BinaryMessage
 	// go func() {
 	// 	for {
 	// 		_, msg, err := ws.ReadMessage()

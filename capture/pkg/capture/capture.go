@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -14,22 +15,73 @@ import (
 
 type Packet struct {
 	version   byte
-	protocol  layers.ProtocolFamily // byte
+	protocol  byte
 	timestamp uint32
+	addr_type byte
 	src_addr  net.IP
-	src_port  net.IP
-	dst_addr  []byte
+	src_port  uint16
+	dst_addr  net.IP
 	dst_port  uint16
 }
 
-func constructPayload(buf []byte, p Packet) ([]byte, error) {
-	p.version = 0x01
-    
-    if p.src_addr.To4() != nil {
+func (p *Packet) String() string {
+	return fmt.Sprintf(
+		"Version: 0x%02X Protocol: 0x%02X Timestamp: %d Addr Type: 0x%02X Source Address: %s Source Port: %d Destination Address: %s Destination Port: %d\n",
+		p.version,
+		p.protocol,
+		p.timestamp,
+		p.addr_type,
+		p.src_addr.String(),
+		p.src_port,
+		p.dst_addr.String(),
+		p.dst_port,
+	)
+}
 
-    }
-    
-	binary.Append(buf, binary.BigEndian, p.version)
+func (p *Packet) constructPayload() ([]byte, error) {
+	var buf []byte
+	// Append fields and check for errors
+	var err error
+	buf, err = binary.Append(buf, binary.BigEndian, p.version)
+	if err != nil {
+		return buf, err
+	}
+
+	buf, err = binary.Append(buf, binary.BigEndian, p.protocol)
+	if err != nil {
+		return buf, err
+	}
+
+	buf, err = binary.Append(buf, binary.BigEndian, p.timestamp)
+	if err != nil {
+		return buf, err
+	}
+
+	buf, err = binary.Append(buf, binary.BigEndian, p.addr_type)
+	if err != nil {
+		return buf, err
+	}
+
+	buf, err = binary.Append(buf, binary.BigEndian, p.src_addr)
+	if err != nil {
+		return buf, err
+	}
+
+	buf, err = binary.Append(buf, binary.BigEndian, p.src_port)
+	if err != nil {
+		return buf, err
+	}
+
+	buf, err = binary.Append(buf, binary.BigEndian, p.dst_addr)
+	if err != nil {
+		return buf, err
+	}
+
+	buf, err = binary.Append(buf, binary.BigEndian, p.dst_port)
+	if err != nil {
+		return buf, err
+	}
+
 	return buf, nil
 }
 
@@ -74,12 +126,28 @@ func handlePacket(packetData []byte, s *websocket.Server) {
 	for _, layer := range packet.Layers() {
 		layerType = layer.LayerType()
 	}
+
+	// add missing data
+	p.version = 0x01
+
+	if p.src_addr.To4() != nil {
+		p.addr_type = 0x01
+	} else {
+		p.addr_type = 0x00
+	}
+
+	p.timestamp = uint32(time.Now().Unix())
+
+	fmt.Println(p.String())
 	switch layerType {
 	case layers.LayerTypeDNS:
 	default:
-		fmt.Printf("%s src: %s:%s dst:%s:%s\n", layerType, p.src_addr, p.src_port, p.dst_addr, p.dst_port)
 		if s.C != nil {
-			s.C.WriteMessage(s.MessageType, []byte(fmt.Sprintf("%s src: %s:%s dst:%s:%s\n", layerType, p.src_addr, p.src_port, p.dst_addr, p.dst_port)))
+			buf, err := p.constructPayload()
+			if err != nil {
+				log.Fatal(1)
+			}
+			s.C.WriteMessage(s.MessageType, buf)
 		}
 	}
 }
