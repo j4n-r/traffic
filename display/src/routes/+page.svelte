@@ -3,6 +3,31 @@
     let status = $state("idle");
     let packets = $state([]);
 
+    let packet = {
+        version: "",
+        protocol: "",
+        timestamp: "",
+        addr_type: "",
+        src_addr: "",
+        src_port: "",
+        dst_addr: "",
+        dst_port: "",
+    };
+
+    function construct_packet(bytes) {
+        packet.version = bytes.slice(0, 1).toString();
+        packet.protocol = bytes.slice(1, 2).toString();
+        packet.timestamp = bytes.slice(2, 10).toString();
+        if (bytes.slice(10, 11) != 0x00) {
+            // check addr type for IP version
+            packet.src_addr = bytes.slice(11, 15).toString();
+            packet.src_port = bytes.slice(15, 17).toString();
+            packet.dst_addr = bytes.slice(17, 21).toString();
+            packet.dst_port = bytes.slice(21, 23).toString();
+        }
+        return packet;
+    }
+
     const socket = new WebSocket("ws://localhost:8999");
     socket.addEventListener("open", () => {
         status = "open";
@@ -11,8 +36,8 @@
         status = event;
     });
     socket.addEventListener("message", (event) => {
-        console.log(event.data);
-        packets.push(event.data);
+        packet =  construct_packet(Uint8Array(event.data))
+        packets.push(packet);
     });
 </script>
 
@@ -20,7 +45,7 @@
     <table class="packet-table">
         <thead>
             <tr>
-                <th>Timestamp</th>
+                <th></th>
                 <th>Source IP</th>
                 <th>Destination IP</th>
                 <th>Protocol</th>
@@ -31,8 +56,8 @@
             {#each packets as packet}
                 <tr>
                     <td>{packet}</td>
-                    <td>{packet.timestamp}</td>
-                    <td>{packet.sourceIP}</td>
+                    <td>{packet.}</td>
+                    <td>{packet.}</td>
                     <td>{packet.destinationIP}</td>
                     <td>{packet.protocol}</td>
                     <td>{packet.size}</td>
@@ -54,7 +79,6 @@
         padding-right: 2rem;
         overflow-y: auto;
         height: 90vh;
-
     }
     table {
         width: 100%;
@@ -73,7 +97,7 @@
         padding: 2rem;
         background-color: white;
         position: sticky;
-        z-index:2;
+        z-index: 2;
         top: 0;
     }
 </style>
