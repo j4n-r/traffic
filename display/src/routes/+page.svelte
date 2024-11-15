@@ -48,7 +48,7 @@
     }
 
     .table-container {
-        background-color: var(--rp-surface);
+        background-color: white;
         border-radius: 10px;
         padding-left: 2rem;
         padding-right: 2rem;
@@ -67,11 +67,11 @@
     th,
     td {
         padding: 12px 15px;
-        color: var(--rp-text);
+        color: var(--rp-dawn-text);
     }
     th {
         padding: 2rem;
-        background-color: var(--rp-surface);
+        background-color: white;
         position: sticky;
         z-index:2;
         top: 0;

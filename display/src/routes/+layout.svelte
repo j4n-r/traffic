@@ -27,16 +27,15 @@ let { children } = $props();
     display: grid;
     grid-template-columns: 0.5fr 8fr;
     grid-template-rows: 0.5fr 8fr;
-    height: 100vh;
+    height: 100%;
 }
 .header {
     grid-column-start:2;
-    background-color: var(--rp-base);
+    background-color: var(--rp-dawn-base);
 }
 
 .sidebar {
-    background-color: var(--rp-base);
-    color: var(--rp-text);
+    color: var(--rp-dawn-text);
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -50,7 +49,7 @@ let { children } = $props();
 
 .sidebar-title {
     font-size: 2rem;
-    color: var(--rp-iris);
+    color: var(--rp-dawn-iris);
 }
 
 .sidebar-menu {
@@ -66,7 +65,7 @@ let { children } = $props();
 
 .content {
     padding: 20px;
-    background-color: var(--rp-overlay);
+    background-color: var(--rp-dawn-base);
     grid-column-start: 2;
     border-top-left-radius: 10px;
 }
